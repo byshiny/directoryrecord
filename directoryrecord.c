@@ -3,16 +3,23 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+//not including windows at the moment
+//#ifdef _WIN32
+//#include <Windows.h>
+//#else
+#include <unistd.h>
+//#endif
 
 //code from: https://embeddedartistry.com/blog/2017/4/6/circular-buffers-in-cc
 typedef struct {
-    uint8_t * buffer;
-    size_t head;
-    size_t tail;
-    size_t size; //of the buffer
+        uint8_t * buffer;
+        size_t head;
+        size_t tail;
+        size_t size; //of the buffer
 } circular_buf_t;
 
 
+//got the template, will try my own implementation
 int circular_buf_reset(circular_buf_t * cbuf);
 int circular_buf_put(circular_buf_t * cbuf, uint8_t data);
 int circular_buf_get(circular_buf_t * cbuf, uint8_t * data);
@@ -29,7 +36,7 @@ circular_buf_reset(&cbuf);
 
 
 
-char chaine1[256];
+char quit[256];
 int main(int argc, char *argv[])   //  command line arguments
 {
 
@@ -62,6 +69,18 @@ int main(int argc, char *argv[])   //  command line arguments
         printf("Hello, World\n"); // \n indicates a newline character
 
 
+
+        pollingDelay = 100
+        //do stuff
+
+        //sleep:
+        //#ifdef _WIN32
+        //Sleep(pollingDelay);
+        //#else
+        usleep(pollingDelay*1000); /* sleep for 100 milliSeconds */
+        //#endif
+
+        //need this command to contniously run
         scanf("%s", chaine1);
 
 

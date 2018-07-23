@@ -33,3 +33,12 @@ Problem: The numbers keep changing, because it's a stack that keeps being re-ord
 Eh. Let's shelve this for now, and improve on it later.
 
 How should I be storing the information? Should it be json? Do I again, need to use a circular buffer?
+
+I think what I need to think about is:
+
+How mission critical is it if the program breaks? It's not like anyone is going to lose a week's worth of work.
+How often should I write to disk? I think every 10 minutes is sufficient.
+
+I think I need two programs - one program to keep a running list of all the programs that are running,
+
+1. Approaches 1: EPC or shared memory.
