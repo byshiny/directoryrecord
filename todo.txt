@@ -31,3 +31,5 @@ User goes back to D
 
 Problem: The numbers keep changing, because it's a stack that keeps being re-ordered.
 Eh. Let's shelve this for now, and improve on it later.
+
+How should I be storing the information? Should it be json? Do I again, need to use a circular buffer?
