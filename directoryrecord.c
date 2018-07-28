@@ -29,6 +29,8 @@ int circular_buf_get(circular_buf_t * cbuf, uint8_t * data);
 bool circular_buf_empty(circular_buf_t cbuf);
 bool circular_buf_full(circular_buf_t cbuf);
 
+
+//DONE
 int circular_buf_reset(circular_buf_t * cbuf){
   //notice that only the pointers are being reset, because the size
   //will remain constant - "deleting" something is the same as not "knowing"
@@ -40,6 +42,8 @@ int circular_buf_reset(circular_buf_t * cbuf){
   }
   return ret_val;
 }
+
+//DONE
 int circular_buf_put(circular_buf_t * cbuf, char* data){
   //probably need to move all of the da data down...
   int idxToReplace = cbuf->head;
@@ -50,13 +54,18 @@ int circular_buf_put(circular_buf_t * cbuf, char* data){
   return 0;
 
 }
+
+//TODO:
 int circular_buf_get(circular_buf_t * cbuf, char * data){
+    int r = -1;
+    if(cbuf && data && !circular_buf_empty(*cbuf))
+    {
+        data = cbuf->buffer[cbuf->tail];
+        cbuf->tail = (cbuf->tail + 1) % cbuf->size;
+        r = 0;
+    }
+    return r;
 
-//  size_t head
-  while(cbuf->head != cbuf->tail){
-
-
-  }
 
 
 }
