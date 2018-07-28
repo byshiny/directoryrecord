@@ -2,6 +2,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <stddef.h>
 
 //not including windows at the moment
 //#ifdef _WIN32
@@ -12,27 +13,69 @@
 
 //code from: https://embeddedartistry.com/blog/2017/4/6/circular-buffers-in-cc
 typedef struct {
-        uint8_t * buffer;
+        char ** buffer;
         size_t head;
         size_t tail;
         size_t size; //of the buffer
 } circular_buf_t;
 
 
-//got the template, will try my own implementation
+/*got the template, will try my own implementation and modify as necessary
+   https://embeddedartistry.com/blog/2017/4/6/circular-buffers-in-cc
+ */
 int circular_buf_reset(circular_buf_t * cbuf);
 int circular_buf_put(circular_buf_t * cbuf, uint8_t data);
 int circular_buf_get(circular_buf_t * cbuf, uint8_t * data);
 bool circular_buf_empty(circular_buf_t cbuf);
 bool circular_buf_full(circular_buf_t cbuf);
 
-int circular_buf_reset(cbuf){
+int circular_buf_reset(circular_buf_t * cbuf){
+  //notice that only the pointers are being reset, because the size
+  //will remain constant - "deleting" something is the same as not "knowing"
+  int ret_val = -1;
+  if(cbuf) {
+        cbuf->head = 0;
+        cbuf->tail = 0;
+        ret_val = 0;
+  }
+  return ret_val;
+}
+int circular_buf_put(circular_buf_t * cbuf, char* data){
+  //probably need to move all of the da data down...
+  int idxToReplace = cbuf->head;
+  cbuf->buffer[idxToReplace] = data;
+  cbuf->head = cbuf->head + 1 % cbuf->size;;
+  cbuf->tail = (cbuf->tail + 1) % cbuf->size;
+  //uint_8t data;
+  return 0;
+
+}
+int circular_buf_get(circular_buf_t * cbuf, char * data){
+
+//  size_t head
+  while(cbuf->head != cbuf->tail){
+
+
+  }
+
+
+}
+bool circular_buf_empty(circular_buf_t cbuf){
+  int ret_val = -1;
+  if(cbuf.head && cbuf.tail){
+      ret_val = 0;
+  }
+  return ret_val;
+
+}
+bool circular_buf_full(circular_buf_t  cbuf){
+  if( (cbuf.head + 1 ) % cbuf.size  == cbuf.tail){
+    return 0;
+  }
+  return 1;
 }
 
-circular_buf_t cbuf;
-cbuf.size = 5;
-cbuf.buffer = malloc(cbuf.size);
-circular_buf_reset(&cbuf);
+//circular_buf_reset(&cbuf);
 
 
 
@@ -70,21 +113,23 @@ int main(int argc, char *argv[])   //  command line arguments
 
 
 
-        pollingDelay = 100
-        //do stuff
+        int pollingDelay = 100;
+                       //do stuff
 
-        //sleep:
-        //#ifdef _WIN32
-        //Sleep(pollingDelay);
-        //#else
-        usleep(pollingDelay*1000); /* sleep for 100 milliSeconds */
+                       //sleep:
+                       //#ifdef _WIN32
+                       //Sleep(pollingDelay);
+                       //#elsex
+                       usleep(pollingDelay*1000); /* sleep for 100 milliSeconds */
         //#endif
 
-        //need this command to contniously run
-        scanf("%s", chaine1);
+        //need this command to contniously run, probably look for quit messages
+        scanf("%s", quit);
 
 
 }
+
+
 void printDirectoryHistory(){
 
 
@@ -115,3 +160,13 @@ void printDirectoryHistory(){
     return;
    }
  */
+
+int start_cd_checker(){
+        int mypid = fork();
+        if( 0 == mypid ){
+                printf( "lol child\n" );
+              }
+        else{
+                printf( "lol parent\n" );
+}
+}
