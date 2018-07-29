@@ -46,16 +46,26 @@ int circular_buf_reset(circular_buf_t * cbuf){
 //DONE
 int circular_buf_put(circular_buf_t * cbuf, char* data){
   //probably need to move all of the da data down...
-  int idxToReplace = cbuf->head;
-  cbuf->buffer[idxToReplace] = data;
-  cbuf->head = cbuf->head + 1 % cbuf->size;;
-  cbuf->tail = (cbuf->tail + 1) % cbuf->size;
-  //uint_8t data;
-  return 0;
+  int r = -1;
+
+    if(cbuf)
+    {
+        cbuf->buffer[cbuf->head] = data;
+        cbuf->head = (cbuf->head + 1) % cbuf->size;
+
+        if(cbuf->head == cbuf->tail)
+        {
+            cbuf->tail = (cbuf->tail + 1) % cbuf->size;
+        }
+
+        r = 0;
+    }
+
+    return r;
 
 }
 
-//TODO:
+//TODO:DONE
 int circular_buf_get(circular_buf_t * cbuf, char * data){
     int r = -1;
     if(cbuf && data && !circular_buf_empty(*cbuf))
@@ -65,18 +75,13 @@ int circular_buf_get(circular_buf_t * cbuf, char * data){
         r = 0;
     }
     return r;
-
-
-
 }
+//DONE
 bool circular_buf_empty(circular_buf_t cbuf){
-  int ret_val = -1;
-  if(cbuf.head && cbuf.tail){
-      ret_val = 0;
-  }
-  return ret_val;
+  return (cbuf.head == cbuf.tail);
 
 }
+
 bool circular_buf_full(circular_buf_t  cbuf){
   if( (cbuf.head + 1 ) % cbuf.size  == cbuf.tail){
     return 0;
@@ -177,5 +182,5 @@ int start_cd_checker(){
               }
         else{
                 printf( "lol parent\n" );
-}
+              }
 }

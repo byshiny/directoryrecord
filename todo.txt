@@ -1,3 +1,13 @@
+Basically, I need a change log of where I left off, because I have multiple projects and I keep forgetting..
+
+
+
+7/28/18 - I'm trying to implement circular buffer's on my own.
+
+
+
+
+
 I want to program this program in C, so that's it's portable to Linux and also in mac.
 The way I'm going to do this, is to listen to ./bashrc_history, and look for any changes.
 From there, I'm going to keep a running list of directory history.
