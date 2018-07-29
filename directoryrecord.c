@@ -23,12 +23,6 @@ typedef struct {
 /*got the template, will try my own implementation and modify as necessary
    https://embeddedartistry.com/blog/2017/4/6/circular-buffers-in-cc
  */
-int circular_buf_reset(circular_buf_t * cbuf);
-int circular_buf_put(circular_buf_t * cbuf, uint8_t data);
-int circular_buf_get(circular_buf_t * cbuf, uint8_t * data);
-bool circular_buf_empty(circular_buf_t cbuf);
-bool circular_buf_full(circular_buf_t cbuf);
-
 
 //DONE
 int circular_buf_reset(circular_buf_t * cbuf){
@@ -77,12 +71,12 @@ int circular_buf_get(circular_buf_t * cbuf, char * data){
     return r;
 }
 //DONE
-bool circular_buf_empty(circular_buf_t cbuf){
+int circular_buf_empty(circular_buf_t cbuf){
   return (cbuf.head == cbuf.tail);
 
 }
 
-bool circular_buf_full(circular_buf_t  cbuf){
+int circular_buf_full(circular_buf_t  cbuf){
   if( (cbuf.head + 1 ) % cbuf.size  == cbuf.tail){
     return 0;
   }
