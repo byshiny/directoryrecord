@@ -3,12 +3,17 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stddef.h>
-
+#include <unistd.h>
+#include <signal.h>
+#include <string.h>
+#include <sys/time.h>
 //not including windows at the moment
 //#ifdef _WIN32
 //#include <Windows.h>
 //#else
-#include <unistd.h>
+
+
+
 //#endif
 
 //code from: https://embeddedartistry.com/blog/2017/4/6/circular-buffers-in-cc
@@ -26,62 +31,62 @@ typedef struct {
 
 //DONE
 int circular_buf_reset(circular_buf_t * cbuf){
-  //notice that only the pointers are being reset, because the size
-  //will remain constant - "deleting" something is the same as not "knowing"
-  int ret_val = -1;
-  if(cbuf) {
-        cbuf->head = 0;
-        cbuf->tail = 0;
-        ret_val = 0;
-  }
-  return ret_val;
+        //notice that only the pointers are being reset, because the size
+        //will remain constant - "deleting" something is the same as not "knowing"
+        int ret_val = -1;
+        if(cbuf) {
+                cbuf->head = 0;
+                cbuf->tail = 0;
+                ret_val = 0;
+        }
+        return ret_val;
 }
 
 //DONE
 int circular_buf_put(circular_buf_t * cbuf, char* data){
-  //probably need to move all of the da data down...
-  int r = -1;
+        //probably need to move all of the da data down...
+        int r = -1;
 
-    if(cbuf)
-    {
-        cbuf->buffer[cbuf->head] = data;
-        cbuf->head = (cbuf->head + 1) % cbuf->size;
-
-        if(cbuf->head == cbuf->tail)
+        if(cbuf)
         {
-            cbuf->tail = (cbuf->tail + 1) % cbuf->size;
+                cbuf->buffer[cbuf->head] = data;
+                cbuf->head = (cbuf->head + 1) % cbuf->size;
+
+                if(cbuf->head == cbuf->tail)
+                {
+                        cbuf->tail = (cbuf->tail + 1) % cbuf->size;
+                }
+
+                r = 0;
         }
 
-        r = 0;
-    }
-
-    return r;
+        return r;
 
 }
 //DONE
 int circular_buf_empty(circular_buf_t cbuf){
-  return (cbuf.head == cbuf.tail);
+        return (cbuf.head == cbuf.tail);
 
 }
 
 //TODO:DONE
 int circular_buf_get(circular_buf_t * cbuf, char * data){
-    int r = -1;
-    if(cbuf && data && !circular_buf_empty(*cbuf))
-    {
-        data = cbuf->buffer[cbuf->tail];
-        cbuf->tail = (cbuf->tail + 1) % cbuf->size;
-        r = 0;
-    }
-    return r;
+        int r = -1;
+        if(cbuf && data && !circular_buf_empty(*cbuf))
+        {
+                data = cbuf->buffer[cbuf->tail];
+                cbuf->tail = (cbuf->tail + 1) % cbuf->size;
+                r = 0;
+        }
+        return r;
 }
 
 
-int circular_buf_full(circular_buf_t  cbuf){
-  if( (cbuf.head + 1 ) % cbuf.size  == cbuf.tail){
-    return 0;
-  }
-  return 1;
+int circular_buf_full(circular_buf_t cbuf){
+        if( (cbuf.head + 1 ) % cbuf.size  == cbuf.tail) {
+                return 0;
+        }
+        return 1;
 }
 
 //circular_buf_reset(&cbuf);
@@ -123,13 +128,13 @@ int main(int argc, char *argv[])   //  command line arguments
 
 
         int pollingDelay = 100;
-                       //do stuff
+        //do stuff
 
-                       //sleep:
-                       //#ifdef _WIN32
-                       //Sleep(pollingDelay);
-                       //#elsex
-                       usleep(pollingDelay*1000); /* sleep for 100 milliSeconds */
+        //sleep:
+        //#ifdef _WIN32
+        //Sleep(pollingDelay);
+        //#elsex
+        usleep(pollingDelay*1000);                /* sleep for 100 milliSeconds */
         //#endif
 
         //need this command to contniously run, probably look for quit messages
@@ -146,6 +151,46 @@ int main(int argc, char *argv[])   //  command line arguments
         circ_buf->size = 100;
         circ_buf->head = 0;
         circ_buf->tail = 0;
+
+        struct sigaction sa;
+        struct itimerval timer;
+
+/* Install timer_handler as the signal handler for SIGVTALRM. */
+        memset (&sa, 0, sizeof (sa));
+        sa.sa_handler = &timer_handler;
+        sigaction (SIGVTALRM, &sa, NULL);
+
+/* Configure the timer to expire after 250 msec... */
+        timer.it_value.tv_sec = 0;
+        timer.it_value.tv_usec = 250000;
+/* ... and every 250 msec after that. */
+        timer.it_interval.tv_sec = 0;
+        timer.it_interval.tv_usec = 250000;
+/* Start a virtual timer. It counts down whenever this process is
+   executing. */
+        setitimer (ITIMER_VIRTUAL, &timer, NULL);
+
+
+        struct sigaction sa;
+        struct itimerval timer;
+
+/* Install timer_handler as the signal handler for SIGVTALRM. */
+        memset (&sa, 0, sizeof (sa));
+        sa.sa_handler = &timer_handler;
+        sigaction (SIGVTALRM, &sa, NULL);
+
+/* Configure the timer to expire after 250 msec... */
+        timer.it_value.tv_sec = 0;
+        timer.it_value.tv_usec = 250000;
+/* ... and every 250 msec after that. */
+        timer.it_interval.tv_sec = 0;
+        timer.it_interval.tv_usec = 250000;
+/* Start a virtual timer. It counts down whenever this process is
+   executing. */
+        setitimer (ITIMER_VIRTUAL, &timer, NULL);
+
+/* Do busy work. */
+        while (1);
 
 }
 
@@ -183,10 +228,15 @@ void printDirectoryHistory(){
 
 int start_cd_checker(){
         int mypid = fork();
-        if( 0 == mypid ){
+        if( 0 == mypid ) {
                 printf( "lol child\n" );
-              }
+        }
         else{
                 printf( "lol parent\n" );
-              }
+        }
 }
+
+
+//references:
+
+//[timer logic]http://www.informit.com/articles/article.aspx?p=23618&seqNum=14
