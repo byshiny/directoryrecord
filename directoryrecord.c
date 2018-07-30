@@ -58,6 +58,11 @@ int circular_buf_put(circular_buf_t * cbuf, char* data){
     return r;
 
 }
+//DONE
+int circular_buf_empty(circular_buf_t cbuf){
+  return (cbuf.head == cbuf.tail);
+
+}
 
 //TODO:DONE
 int circular_buf_get(circular_buf_t * cbuf, char * data){
@@ -70,11 +75,7 @@ int circular_buf_get(circular_buf_t * cbuf, char * data){
     }
     return r;
 }
-//DONE
-int circular_buf_empty(circular_buf_t cbuf){
-  return (cbuf.head == cbuf.tail);
 
-}
 
 int circular_buf_full(circular_buf_t  cbuf){
   if( (cbuf.head + 1 ) % cbuf.size  == cbuf.tail){
@@ -134,6 +135,17 @@ int main(int argc, char *argv[])   //  command line arguments
         //need this command to contniously run, probably look for quit messages
         scanf("%s", quit);
 
+        // char ** buffer;
+        // size_t head;
+        // size_t tail;
+        // size_t size;
+
+
+        circular_buf_t * circ_buf;
+        circ_buf = malloc(sizeof(circular_buf_t));
+        circ_buf->size = 100;
+        circ_buf->head = 0;
+        circ_buf->tail = 0;
 
 }
 
