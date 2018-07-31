@@ -8,13 +8,17 @@
 #include <string.h>
 #include <sys/time.h>
 #include <sys/mman.h>
+#include <sys/types.h>
+#include <sys/ipc.h>
+#include <sys/shm.h>
 //not including windows at the moment
 //#ifdef _WIN32
 //#include <Windows.h>
 //#else
 
-
-
+#define MAX_CHAR_SIZE (1)
+#define CHAR_PER_LINE (128)
+#define LINES (100)
 //#endif
 
 //code from: https://embeddedartistry.com/blog/2017/4/6/circular-buffers-in-cc
@@ -69,7 +73,7 @@ int circular_buf_empty(circular_buf_t cbuf){
 }
 //circular_buf_reset(&cbuf);
 char quit[256];
-
+char string[256];
 void timer_handler (int signum)
 {
   char buf[100];
@@ -110,6 +114,18 @@ int circular_buf_get(circular_buf_t * cbuf, char * data){
         return r;
 }
 
+void * create_shared_memory() {
+  //this is a usecase for quickclip
+  //#define MAX_CHAR_SIZE (1)
+  //#define CHAR_PER_LINE (128)
+  //#define LINES (100)
+
+  key_t key;
+  key = 1234567890;
+  int size = MAX_CHAR_SIZE * CHAR_PER_LINE* LINES;
+  int shm_id = shmget(key, size, IPC_CREAT | 0666);
+}
+
 
 int circular_buf_full(circular_buf_t cbuf){
         if( (cbuf.head + 1 ) % cbuf.size  == cbuf.tail) {
@@ -120,11 +136,70 @@ int circular_buf_full(circular_buf_t cbuf){
 
 
 //be a good boy and take out the SRP, take out listening for quit messages
+void start_pwd_grabber(){
+  struct sigaction sa;
+  struct itimerval timer;
 
+  /* Install timer_handler as the signal handler for SIGVTALRM. */
+  memset (&sa, 0, sizeof (sa));
+  sa.sa_handler = &timer_handler;
+  sigaction (SIGVTALRM, &sa, NULL);
+
+  /* Configure the timer to expire after 250 msec... */
+  timer.it_value.tv_sec = 0;
+  timer.it_value.tv_usec = 250000;
+  /* ... and every 250 msec after that. */
+  timer.it_interval.tv_sec = 0;
+  timer.it_interval.tv_usec = 250000;
+  /* Start a virtual timer. It counts down whenever this process is
+  executing. */
+  setitimer (ITIMER_VIRTUAL, &timer, NULL);
+
+  /* Do busy work. */
+  while (1);
+
+}
+
+int start_cd_checker(){
+        int mypid = fork();
+        if( 0 == mypid ) {
+                printf( "lol child\n" );
+        }
+        else{
+                printf( "lol parent\n" );
+        }
+}
+
+void printDirectoryHistory(){
+
+
+}
 
 
 int main(int argc, char *argv[])   //  command line arguments
 {
+  if(strcmp(argv[1], "listener")){
+
+      start_pwd_grabber();
+  }
+  if(strcmp(argv[1], "v")){
+    // dr v
+    // show all the previous directories
+  }
+
+  if(strcmp(argv[1], "c")){
+    // dr c
+    // change to a new directory
+  }
+
+
+
+  char* parent_message = "hello";  // parent process will write this message
+  char* child_message = "goodbye"; // child process will then write this one
+
+  //we need to structure this to a circular buffer kind of scheme
+  //number of characters * size of character * total number of line
+  void* shmem = create_shared_memory();
         // char ** buffer;
         // size_t head;
         // size_t tail;
@@ -159,33 +234,11 @@ int main(int argc, char *argv[])   //  command line arguments
 //         while (1);
 
 
-        struct sigaction sa;
-        struct itimerval timer;
-
-/* Install timer_handler as the signal handler for SIGVTALRM. */
-        memset (&sa, 0, sizeof (sa));
-        sa.sa_handler = &timer_handler;
-        sigaction (SIGVTALRM, &sa, NULL);
-
-/* Configure the timer to expire after 250 msec... */
-        timer.it_value.tv_sec = 0;
-        timer.it_value.tv_usec = 250000;
-/* ... and every 250 msec after that. */
-        timer.it_interval.tv_sec = 0;
-        timer.it_interval.tv_usec = 250000;
-/* Start a virtual timer. It counts down whenever this process is
-   executing. */
-        setitimer (ITIMER_VIRTUAL, &timer, NULL);
-
-/* Do busy work. */
-        while (1);
-}
-
-
-void printDirectoryHistory(){
-
 
 }
+
+
+
 
 /*
    void get_popen()
@@ -213,30 +266,7 @@ void printDirectoryHistory(){
    }
  */
 
-int start_cd_checker(){
-        int mypid = fork();
-        if( 0 == mypid ) {
-                printf( "lol child\n" );
-        }
-        else{
-                printf( "lol parent\n" );
-        }
-}
 
-
-void * create_shared_memory(size_t size) {
-        // Our memory buffer will be readable and writable:
-        int protection = PROT_READ | PROT_WRITE;
-
-        // The buffer will be shared (meaning other processes can access it), but
-        // anonymous (meaning third-party processes cannot obtain an address for it),
-        // so only this process and its children will be able to use it:
-        int visibility = MAP_ANONYMOUS | MAP_SHARED;
-
-        // The remaITIMER_REALining parameters to `mmap()` are not important for this use case,
-        // but the manpage for `mmap` explains their purpose.
-        return mmap(NULL, size, protection, visibility, 0, 0);
-}
 
 
 //references:
