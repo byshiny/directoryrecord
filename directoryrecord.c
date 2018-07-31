@@ -24,8 +24,6 @@ typedef struct {
         size_t tail;
         size_t size; //of the buffer
 } circular_buf_t;
-
-
 /*got the template, will try my own implementation and modify as necessary
    https://embeddedartistry.com/blog/2017/4/6/circular-buffers-in-cc
  */
@@ -69,7 +67,37 @@ int circular_buf_empty(circular_buf_t cbuf){
         return (cbuf.head == cbuf.tail);
 
 }
+//circular_buf_reset(&cbuf);
+char quit[256];
 
+void timer_handler (int signum)
+{
+  char buf[100];
+  char *str = NULL;
+  char *temp = NULL;
+  unsigned int size = 1; // start with size of 1 to make room for null terminator
+  unsigned int strlength;
+
+  FILE *fp;
+  char path[1035];
+
+  /* Open the command for reading. */
+  //fp = popen("/bin/ls /etc/", "r");
+  fp = popen("pwd", "r");
+  if (fp == NULL) {
+          printf("Failed to run command\n" );
+          exit(1);
+  }
+
+  /* Read the output a line at a time - output it. */
+  while (fgets(path, sizeof(path)-1, fp) != NULL) {
+          printf("%s", path);
+  }
+
+  /* close */
+  pclose(fp);
+  printf("Hello, World\n"); // \n indicates a newline character
+}
 //TODO:DONE
 int circular_buf_get(circular_buf_t * cbuf, char * data){
         int r = -1;
@@ -90,86 +118,45 @@ int circular_buf_full(circular_buf_t cbuf){
         return 1;
 }
 
-//circular_buf_reset(&cbuf);
+
+//be a good boy and take out the SRP, take out listening for quit messages
 
 
 
-char quit[256];
 int main(int argc, char *argv[])   //  command line arguments
 {
-
-        //char * cwd_out = popen ("pwd", "r");
-
-        char buf[100];
-        char *str = NULL;
-        char *temp = NULL;
-        unsigned int size = 1; // start with size of 1 to make room for null terminator
-        unsigned int strlength;
-
-        FILE *fp;
-        char path[1035];
-
-/* Open the command for reading. */
-        //fp = popen("/bin/ls /etc/", "r");
-        fp = popen("pwd", "r");
-        if (fp == NULL) {
-                printf("Failed to run command\n" );
-                exit(1);
-        }
-
-/* Read the output a line at a time - output it. */
-        while (fgets(path, sizeof(path)-1, fp) != NULL) {
-                printf("%s", path);
-        }
-
-/* close */
-        pclose(fp);
-        printf("Hello, World\n"); // \n indicates a newline character
-
-
-
-        int pollingDelay = 100;
-        //do stuff
-
-        //sleep:
-        //#ifdef _WIN32
-        //Sleep(pollingDelay);
-        //#elsex
-        usleep(pollingDelay*1000);                /* sleep for 100 milliSeconds */
-        //#endif
-
-        //need this command to contniously run, probably look for quit messages
-        scanf("%s", quit);
-
         // char ** buffer;
         // size_t head;
         // size_t tail;
         // size_t size;
 
 
-        circular_buf_t * circ_buf;
-        circ_buf = malloc(sizeof(circular_buf_t));
-        circ_buf->size = 100;
-        circ_buf->head = 0;
-        circ_buf->tail = 0;
-
-        struct sigaction sa;
-        struct itimerval timer;
-
-/* Install timer_handler as the signal handler for SIGVTALRM. */
-        memset (&sa, 0, sizeof (sa));
-        sa.sa_handler = &timer_handler;
-        sigaction (SIGVTALRM, &sa, NULL);
-
-/* Configure the timer to expire after 250 msec... */
-        timer.it_value.tv_sec = 0;
-        timer.it_value.tv_usec = 250000;
-/* ... and every 250 msec after that. */
-        timer.it_interval.tv_sec = 0;
-        timer.it_interval.tv_usec = 250000;
-/* Start a virtual timer. It counts down whenever this process is
-   executing. */
-        setitimer (ITIMER_VIRTUAL, &timer, NULL);
+//         circular_buf_t * circ_buf;
+//         circ_buf = malloc(sizeof(circular_buf_t));
+//         circ_buf->size = 100;
+//         circ_buf->head = 0;
+//         circ_buf->tail = 0;
+//
+//         struct sigaction sa;
+//         struct itimerval timer;
+//
+// /* Install pwd_handler as the signal handler for SIGVTALRM. */
+//         memset (&sa, 0, sizeof (sa));
+//         sa.sa_handler = &pwd_handler;
+//         sigaction (SIGVTALRM, &sa, NULL);
+//
+// /* Configure the timer to expire after 250 msec... */
+//         timer.it_value.tv_sec = 0;
+//         timer.it_value.tv_usec = 1000000;
+// /* ... and every 250 msec after that. */
+//         timer.it_interval.tv_sec = 0;
+//         timer.it_interval.tv_usec = 1000000;
+// /* Start a virtual timer. It counts down whenever this process is
+//    executing. */
+//         setitimer (ITIMER_REAL, &timer, NULL);
+//
+// /* Do busy work. */
+//         while (1);
 
 
         struct sigaction sa;
@@ -192,7 +179,6 @@ int main(int argc, char *argv[])   //  command line arguments
 
 /* Do busy work. */
         while (1);
-
 }
 
 
@@ -237,18 +223,19 @@ int start_cd_checker(){
         }
 }
 
-void* create_shared_memory(size_t size) {
-  // Our memory buffer will be readable and writable:
-  int protection = PROT_READ | PROT_WRITE;
 
-  // The buffer will be shared (meaning other processes can access it), but
-  // anonymous (meaning third-party processes cannot obtain an address for it),
-  // so only this process and its children will be able to use it:
-  int visibility = MAP_ANONYMOUS | MAP_SHARED;
+void * create_shared_memory(size_t size) {
+        // Our memory buffer will be readable and writable:
+        int protection = PROT_READ | PROT_WRITE;
 
-  // The remaining parameters to `mmap()` are not important for this use case,
-  // but the manpage for `mmap` explains their purpose.
-  return mmap(NULL, size, protection, visibility, 0, 0);
+        // The buffer will be shared (meaning other processes can access it), but
+        // anonymous (meaning third-party processes cannot obtain an address for it),
+        // so only this process and its children will be able to use it:
+        int visibility = MAP_ANONYMOUS | MAP_SHARED;
+
+        // The remaITIMER_REALining parameters to `mmap()` are not important for this use case,
+        // but the manpage for `mmap` explains their purpose.
+        return mmap(NULL, size, protection, visibility, 0, 0);
 }
 
 
