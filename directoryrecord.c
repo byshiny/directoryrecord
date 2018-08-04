@@ -31,6 +31,11 @@ typedef struct {
 /*got the template, will try my own implementation and modify as necessary
    https://embeddedartistry.com/blog/2017/4/6/circular-buffers-in-cc
  */
+ struct Data { int a; double b; char c;};
+ int ShmID;
+ key_t Key;
+ struct Data *p;
+
 
 //DONE
 int circular_buf_reset(circular_buf_t * cbuf){
@@ -114,10 +119,8 @@ int circular_buf_get(circular_buf_t * cbuf, char * data){
         return r;
 }
 
-struct Data { int a; double b; char x;};
 
-
-int create_shared_memory() {
+int create_shared_memory(struct Data) {
   //this is a usecase for quickclip
   //#define MAX_CHAR_SIZE (1)
   //#define CHAR_PER_LINE (128)
@@ -126,7 +129,11 @@ int create_shared_memory() {
   key_t key;
   key = 1234567890;
   int size = MAX_CHAR_SIZE * CHAR_PER_LINE * LINES;
-  int shm_id = shmget(key, size, IPC_CREAT | 0666);
+  //replaced with struct data, but can put size as well
+  int shm_id = shmget(key,  sizeof(struct Data), IPC_CREAT | 0666);
+  if ((int) p < 0) {
+printf(“shmat() failed\n”); exit(1);
+}
   return shm_id;
 }
 
@@ -185,6 +192,11 @@ int main(int argc, char *argv[])   //  command line arguments
   if(strcmp(argv[1], "listener")){
 
       start_pwd_grabber();
+         struct listitem* newItem = malloc(sizeof(struct listitem));
+      int ShmID = create_shared_memory();
+      //need to write out this to disk
+      struct Data *p = (struct Data *) shmat(ShmID, NULL, 0);
+      p->a = 1; p->b = 5.0; p->c = '.';
   }
   if(strcmp(argv[1], "v")){
     // dr v
@@ -203,9 +215,7 @@ int main(int argc, char *argv[])   //  command line arguments
 
   //we need to structure this to a circular buffer kind of scheme
   //number of characters * size of character * total number of line
-  int ShmID = create_shared_memory();
-  //need to write out this to disk
-  struct Data *p = (struct Data *) shmat(ShmID, NULL, 0);
+
         // char ** buffer;
         // size_t head;
         // size_t tail;
