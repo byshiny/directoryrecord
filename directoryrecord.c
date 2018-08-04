@@ -120,7 +120,7 @@ int circular_buf_get(circular_buf_t * cbuf, char * data){
 }
 
 
-int create_shared_memory(struct Data) {
+int create_shared_memory() {
   //this is a usecase for quickclip
   //#define MAX_CHAR_SIZE (1)
   //#define CHAR_PER_LINE (128)
@@ -132,8 +132,8 @@ int create_shared_memory(struct Data) {
   //replaced with struct data, but can put size as well
   int shm_id = shmget(key,  sizeof(struct Data), IPC_CREAT | 0666);
   if ((int) p < 0) {
-printf(“shmat() failed\n”); exit(1);
-}
+    printf("shmat() failed\n"); exit(1);
+  }
   return shm_id;
 }
 
@@ -192,7 +192,7 @@ int main(int argc, char *argv[])   //  command line arguments
   if(strcmp(argv[1], "listener")){
 
       start_pwd_grabber();
-         struct listitem* newItem = malloc(sizeof(struct listitem));
+      struct Data* new_data = malloc(sizeof(struct Data));
       int ShmID = create_shared_memory();
       //need to write out this to disk
       struct Data *p = (struct Data *) shmat(ShmID, NULL, 0);
