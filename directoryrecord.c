@@ -114,7 +114,10 @@ int circular_buf_get(circular_buf_t * cbuf, char * data){
         return r;
 }
 
-void * create_shared_memory() {
+struct Data { int a; double b; char x;};
+
+
+int create_shared_memory() {
   //this is a usecase for quickclip
   //#define MAX_CHAR_SIZE (1)
   //#define CHAR_PER_LINE (128)
@@ -122,8 +125,9 @@ void * create_shared_memory() {
 
   key_t key;
   key = 1234567890;
-  int size = MAX_CHAR_SIZE * CHAR_PER_LINE* LINES;
+  int size = MAX_CHAR_SIZE * CHAR_PER_LINE * LINES;
   int shm_id = shmget(key, size, IPC_CREAT | 0666);
+  return shm_id;
 }
 
 
@@ -199,7 +203,9 @@ int main(int argc, char *argv[])   //  command line arguments
 
   //we need to structure this to a circular buffer kind of scheme
   //number of characters * size of character * total number of line
-  void* shmem = create_shared_memory();
+  int ShmID = create_shared_memory();
+  //need to write out this to disk
+  struct Data *p = (struct Data *) shmat(ShmID, NULL, 0);
         // char ** buffer;
         // size_t head;
         // size_t tail;
