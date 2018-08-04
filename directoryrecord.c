@@ -16,14 +16,15 @@
 //#include <Windows.h>
 //#else
 
-#define MAX_CHAR_SIZE (1)
-#define CHAR_PER_LINE (128)
-#define LINES (100)
+//#define MAX_CHAR_SIZE (1)
+//#define CHAR_PER_LINE (128)
+//#define LINES (100)
 //#endif
 
 //code from: https://embeddedartistry.com/blog/2017/4/6/circular-buffers-in-cc
 typedef struct {
-        char ** buffer;
+        //char buffer[100][256];
+        char **buffer;
         size_t head;
         size_t tail;
         size_t size; //of the buffer
@@ -31,10 +32,14 @@ typedef struct {
 /*got the template, will try my own implementation and modify as necessary
    https://embeddedartistry.com/blog/2017/4/6/circular-buffers-in-cc
  */
- struct Data { int a; double b; char c;};
- int ShmID;
- key_t Key;
- struct Data *p;
+struct Data {
+   int a;
+   double b;
+   char c;
+ };
+int ShmID;
+key_t Key;
+struct Data *p;
 
 
 //DONE
@@ -81,31 +86,32 @@ char quit[256];
 char string[256];
 void timer_handler (int signum)
 {
-  char buf[100];
-  char *str = NULL;
-  char *temp = NULL;
-  unsigned int size = 1; // start with size of 1 to make room for null terminator
-  unsigned int strlength;
+        char buf[100];
+        char *str = NULL;
+        char *temp = NULL;
+        unsigned int size = 1; // start with size of 1 to make room for null terminator
+        unsigned int strlength;
 
-  FILE *fp;
-  char path[1035];
+        FILE *fp;
+        char path[1035];
 
-  /* Open the command for reading. */
-  //fp = popen("/bin/ls /etc/", "r");
-  fp = popen("pwd", "r");
-  if (fp == NULL) {
-          printf("Failed to run command\n" );
-          exit(1);
-  }
+        /* Open the command for reading. */
+        //fp = popen("/bin/ls /etc/", "r");
+        fp = popen("pwd", "r");
+        if (fp == NULL) {
+                printf("Failed to run command\n" );
+                exit(1);
+        }
 
-  /* Read the output a line at a time - output it. */
-  while (fgets(path, sizeof(path)-1, fp) != NULL) {
-          printf("%s", path);
-  }
+        /* Read the output a line at a time - output it. */
+        while (fgets(path, sizeof(path)-1, fp) != NULL) {
+                //comment this out temporarily for
+                //printf("%s", path);
+        }
 
-  /* close */
-  pclose(fp);
-  printf("Hello, World\n"); // \n indicates a newline character
+        /* close */
+        pclose(fp);
+
 }
 //TODO:DONE
 int circular_buf_get(circular_buf_t * cbuf, char * data){
@@ -121,20 +127,25 @@ int circular_buf_get(circular_buf_t * cbuf, char * data){
 
 
 int create_shared_memory() {
-  //this is a usecase for quickclip
-  //#define MAX_CHAR_SIZE (1)
-  //#define CHAR_PER_LINE (128)
-  //#define LINES (100)
+        //this is a usecase for quickclip
+        //#define MAX_CHAR_SIZE (1)
+        //#define CHAR_PER_LINE (128)
+        //#define LINES (100)
 
-  key_t key;
-  key = 1234567890;
-  int size = MAX_CHAR_SIZE * CHAR_PER_LINE * LINES;
-  //replaced with struct data, but can put size as well
-  int shm_id = shmget(key,  sizeof(struct Data), IPC_CREAT | 0666);
-  if ((int) p < 0) {
-    printf("shmat() failed\n"); exit(1);
-  }
-  return shm_id;
+        key_t key;
+        key = 1234567890;
+        //int size = MAX_CHAR_SIZE * CHAR_PER_LINE * LINES;
+        //replaced with struct data, but can put size as well. Need to think hard about how I'm going to allocate this memory,
+        //and how I am going to free this later.
+        int size = 0;
+
+        //possible memory leak, need to clean up
+
+        int shm_id = shmget(key,  sizeof(struct Data), IPC_CREAT | 0666);
+        if ( shm_id < 0) {
+                printf("shmat() failed\n"); exit(1);
+        }
+        return shm_id;
 }
 
 
@@ -148,26 +159,26 @@ int circular_buf_full(circular_buf_t cbuf){
 
 //be a good boy and take out the SRP, take out listening for quit messages
 void start_pwd_grabber(){
-  struct sigaction sa;
-  struct itimerval timer;
+        struct sigaction sa;
+        struct itimerval timer;
 
-  /* Install timer_handler as the signal handler for SIGVTALRM. */
-  memset (&sa, 0, sizeof (sa));
-  sa.sa_handler = &timer_handler;
-  sigaction (SIGVTALRM, &sa, NULL);
+        /* Install timer_handler as the signal handler for SIGVTALRM. */
+        memset (&sa, 0, sizeof (sa));
+        sa.sa_handler = &timer_handler;
+        sigaction (SIGVTALRM, &sa, NULL);
 
-  /* Configure the timer to expire after 250 msec... */
-  timer.it_value.tv_sec = 0;
-  timer.it_value.tv_usec = 250000;
-  /* ... and every 250 msec after that. */
-  timer.it_interval.tv_sec = 0;
-  timer.it_interval.tv_usec = 250000;
-  /* Start a virtual timer. It counts down whenever this process is
-  executing. */
-  setitimer (ITIMER_VIRTUAL, &timer, NULL);
+        /* Configure the timer to expire after 250 msec... */
+        timer.it_value.tv_sec = 1;
+        timer.it_value.tv_usec = 0;
+        /* ... and every 250 msec after that. */
+        timer.it_interval.tv_sec = 1;
+        timer.it_interval.tv_usec = 0;
+        /* Start a virtual timer. It counts down whenever this process is
+           executing. */
+        setitimer (ITIMER_VIRTUAL, &timer, NULL);
 
-  /* Do busy work. */
-  while (1);
+        /* Do busy work. */
+        while (1);
 
 }
 
@@ -189,32 +200,39 @@ void printDirectoryHistory(){
 
 int main(int argc, char *argv[])   //  command line arguments
 {
-  if(strcmp(argv[1], "listener")){
 
-      start_pwd_grabber();
-      struct Data* new_data = malloc(sizeof(struct Data));
-      int ShmID = create_shared_memory();
-      //need to write out this to disk
-      struct Data *p = (struct Data *) shmat(ShmID, NULL, 0);
-      p->a = 1; p->b = 5.0; p->c = '.';
-  }
-  if(strcmp(argv[1], "v")){
-    // dr v
-    // show all the previous directories
-  }
+        if(argc == 2) {
+                if(strcmp(argv[1], "listener") == 0) {
+                        int ShmID = create_shared_memory();
+                        //need to write out this to disk
+                        struct Data *p = (struct Data *) shmat(ShmID, NULL, 0);
+                        p->a = 1; p->b = 5.0; p->c = '.';
+                        start_pwd_grabber();
 
-  if(strcmp(argv[1], "c")){
-    // dr c
-    // change to a new directory
-  }
+                }
+                //this function would need to read from memory, v stands for view
+                if(strcmp(argv[1], "v") == 0) {
+                        //need to error check for running process that is listening.
+                        key_t key;
+                        key = 1234567890;
+                        int shm_id = shmget(key,  sizeof(struct Data), IPC_CREAT | 0666);
+                        struct Data *p = (struct Data *) shmat(shm_id, NULL, 0);
+                        printf("%d", p->a);
+                        // dr v
+                        // show all the previous directories
+                }
 
+                if(strcmp(argv[1], "c")) {
+                        // dr c
+                        // change to a new directory
+                }
 
+        }
+        char* parent_message = "hello"; // parent process will write this message
+        char* child_message = "goodbye"; // child process will then write this one
 
-  char* parent_message = "hello";  // parent process will write this message
-  char* child_message = "goodbye"; // child process will then write this one
-
-  //we need to structure this to a circular buffer kind of scheme
-  //number of characters * size of character * total number of line
+        //we need to structure this to a circular buffer kind of scheme
+        //number of characters * size of character * total number of line
 
         // char ** buffer;
         // size_t head;
