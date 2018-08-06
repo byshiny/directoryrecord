@@ -117,16 +117,26 @@ void timer_handler (int signum)
         }
 
         /* Read the output a line at a time - output it. */
+        int counter = 0;
+        char * latest_directory;
         while (fgets(path, sizeof(path)-1, fp) != NULL) {
                 //comment this out temporarily for
-                char * latest_directory = global_cb->buffer[global_cb->head];
+                latest_directory = global_cb->buffer[global_cb->head];
+                if(strcmp(latest_directory, path) != 0){
+                    circular_buf_put(global_cb, path);
+                }
                 strcpy(latest_directory, path);
                 printf("head!");
-                printf("%s", latest_directory);
+                printf("%d",counter);
+                if(counter == 5){
+                  break;
+                }
+                counter++;
+                //printf("%s", latest_directory);
                 //circular_buf_put();
                 //printf("%s", path);
         }
-
+        printf("yoodle lay hoo%s", latest_directory);
         /* close */
         pclose(fp);
 
@@ -268,16 +278,15 @@ int main(int argc, char *argv[])   //  command line arguments
                 }
 
                 if(strcmp(argv[1], "exit") == 0){
-
                   key_t key = 1234567890;
                   int shm_id = shmget(key,  sizeof(struct Data), IPC_CREAT | 0666);
                   shmctl(shm_id, IPC_RMID, NULL);
-
+                  printf("exit status for meta: %d\n", shm_id);
                   key_t key_for_data = 987654321;
-                  shm_id = shmget(key_for_data,  sizeof(struct Data), IPC_CREAT | 0666);
+                  shm_id = shmget(key_for_data,  sizeof(circular_buf_t), IPC_CREAT | 0666);
                   shmctl(shm_id, IPC_RMID, NULL);
+                  printf("exit status for data: %d\n", shm_id);
                 }
-
         }
         char* parent_message = "hello"; // parent process will write this message
         char* child_message = "goodbye"; // child process will then write this one
