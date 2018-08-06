@@ -23,7 +23,7 @@
 
 //code from: https://embeddedartistry.com/blog/2017/4/6/circular-buffers-in-cc
 typedef struct {
-        char buffer[100][256];
+        char buffer[LINES][CHAR_PER_LINE];
         size_t head;
         size_t tail;
         size_t size; //of the buffer
@@ -39,8 +39,7 @@ struct Data {
    size_t tail;
    size_t size; //of the buffer
  };
-
-/*
+circular_buf_t* global_cb;
 //DONE
 int circular_buf_reset(circular_buf_t * cbuf){
         //notice that only the pointers are being reset, because the size
@@ -61,7 +60,7 @@ int circular_buf_put(circular_buf_t * cbuf, char* data){
 
         if(cbuf)
         {
-                cbuf->buffer[cbuf->head] = data;
+                strcpy(cbuf->buffer[cbuf->head], data);
                 cbuf->head = (cbuf->head + 1) % cbuf->size;
 
                 if(cbuf->head == cbuf->tail)
@@ -80,8 +79,7 @@ int circular_buf_empty(circular_buf_t cbuf){
         return (cbuf.head == cbuf.tail);
 
 }
-*/
-/*
+
 //TODO:DONE
 int circular_buf_get(circular_buf_t * cbuf, char * data){
         int r = -1;
@@ -93,7 +91,8 @@ int circular_buf_get(circular_buf_t * cbuf, char * data){
         }
         return r;
 }
-*/
+
+
 
 //circular_buf_reset(&cbuf);
 char quit[256];
@@ -120,6 +119,11 @@ void timer_handler (int signum)
         /* Read the output a line at a time - output it. */
         while (fgets(path, sizeof(path)-1, fp) != NULL) {
                 //comment this out temporarily for
+                char * latest_directory = global_cb->buffer[global_cb->head];
+                strcpy(latest_directory, path);
+                printf("head!");
+                printf("%s", latest_directory);
+                //circular_buf_put();
                 //printf("%s", path);
         }
 
@@ -225,10 +229,12 @@ int main(int argc, char *argv[])   //  command line arguments
                         p->a = 1; p->b = 5.0; p->c = '.';
 
                         int shm_data_id = create_shared_memory_for_data();
-                        circular_buf_t * cb = (circular_buf_t*) shmat(shm_data_id, NULL, 0);
+                        global_cb = (circular_buf_t*) shmat(shm_data_id, NULL, 0);
+                        circular_buf_reset(global_cb);
+                        global_cb->size = 100;
                         //cb->tail = 10;
 
-                        strcpy(((cb->buffer))[0], "herro!!!!");
+                        strcpy(((global_cb->buffer))[0], "herro!!!!");
 
                         //char * str_target = p->bf.buffer[0];
                         //strcpy(str_target, "herro!!!!");
