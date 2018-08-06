@@ -5,9 +5,9 @@ Basically, I need a change log of where I left off, because I have multiple proj
 7/28/18 - I'm trying to implement circular buffer's on my own.
 
 to do list:
-(extra) control how much the dr v command will print out the previous directories
+1. (extra) control how much the dr v command will print out the previous directories
 error safe constant writing to directory
-
+2. killing the listener
 
 
 I want to program this program in C, so that's it's portable to Linux and also in mac.

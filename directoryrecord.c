@@ -16,15 +16,14 @@
 //#include <Windows.h>
 //#else
 
-//#define MAX_CHAR_SIZE (1)
-//#define CHAR_PER_LINE (128)
-//#define LINES (100)
+#define MAX_CHAR_SIZE (1)
+#define CHAR_PER_LINE (128)
+#define LINES (100)
 //#endif
 
 //code from: https://embeddedartistry.com/blog/2017/4/6/circular-buffers-in-cc
 typedef struct {
-        //char buffer[100][256];
-        char **buffer;
+        char buffer[100][256];
         size_t head;
         size_t tail;
         size_t size; //of the buffer
@@ -36,12 +35,12 @@ struct Data {
    int a;
    double b;
    char c;
+   size_t head;
+   size_t tail;
+   size_t size; //of the buffer
  };
-int ShmID;
-key_t Key;
-struct Data *p;
 
-
+/*
 //DONE
 int circular_buf_reset(circular_buf_t * cbuf){
         //notice that only the pointers are being reset, because the size
@@ -81,6 +80,21 @@ int circular_buf_empty(circular_buf_t cbuf){
         return (cbuf.head == cbuf.tail);
 
 }
+*/
+/*
+//TODO:DONE
+int circular_buf_get(circular_buf_t * cbuf, char * data){
+        int r = -1;
+        if(cbuf && data && !circular_buf_empty(*cbuf))
+        {
+                data = cbuf->buffer[cbuf->tail];
+                cbuf->tail = (cbuf->tail + 1) % cbuf->size;
+                r = 0;
+        }
+        return r;
+}
+*/
+
 //circular_buf_reset(&cbuf);
 char quit[256];
 char string[256];
@@ -113,20 +127,10 @@ void timer_handler (int signum)
         pclose(fp);
 
 }
-//TODO:DONE
-int circular_buf_get(circular_buf_t * cbuf, char * data){
-        int r = -1;
-        if(cbuf && data && !circular_buf_empty(*cbuf))
-        {
-                data = cbuf->buffer[cbuf->tail];
-                cbuf->tail = (cbuf->tail + 1) % cbuf->size;
-                r = 0;
-        }
-        return r;
-}
 
 
-int create_shared_memory() {
+//create a memory region for meta information
+int create_shared_memory_for_meta() {
         //this is a usecase for quickclip
         //#define MAX_CHAR_SIZE (1)
         //#define CHAR_PER_LINE (128)
@@ -146,6 +150,17 @@ int create_shared_memory() {
                 printf("shmat() failed\n"); exit(1);
         }
         return shm_id;
+}
+
+//create a memory for data region, which are strings of all the current directories
+int create_shared_memory_for_data() {
+  //sizeof(LINES* CHAR_PER_LINE * MAX_CHAR_SIZE)
+        key_t shared_buffer_key = 987654321;
+        int shm_buffer_id = shmget(shared_buffer_key, sizeof(circular_buf_t) , IPC_CREAT | 0666);
+        if ( shm_buffer_id < 0) {
+                printf("shmat() for circular buffer failed\n"); exit(1);
+        }
+        return shm_buffer_id;
 }
 
 
@@ -190,6 +205,7 @@ int start_cd_checker(){
         else{
                 printf( "lol parent\n" );
         }
+        return 0;
 }
 
 void printDirectoryHistory(){
@@ -203,28 +219,57 @@ int main(int argc, char *argv[])   //  command line arguments
 
         if(argc == 2) {
                 if(strcmp(argv[1], "listener") == 0) {
-                        int ShmID = create_shared_memory();
+                        int ShmID = create_shared_memory_for_meta();
                         //need to write out this to disk
                         struct Data *p = (struct Data *) shmat(ShmID, NULL, 0);
                         p->a = 1; p->b = 5.0; p->c = '.';
+
+                        int shm_data_id = create_shared_memory_for_data();
+                        circular_buf_t * cb = (circular_buf_t*) shmat(shm_data_id, NULL, 0);
+                        //cb->tail = 10;
+
+                        strcpy(((cb->buffer))[0], "herro!!!!");
+
+                        //char * str_target = p->bf.buffer[0];
+                        //strcpy(str_target, "herro!!!!");
                         start_pwd_grabber();
+
+
 
                 }
                 //this function would need to read from memory, v stands for view
                 if(strcmp(argv[1], "v") == 0) {
                         //need to error check for running process that is listening.
-                        key_t key;
-                        key = 1234567890;
+                        key_t key = 1234567890;
+
                         int shm_id = shmget(key,  sizeof(struct Data), IPC_CREAT | 0666);
                         struct Data *p = (struct Data *) shmat(shm_id, NULL, 0);
                         printf("%d", p->a);
+
+                        key = 987654321;
+
+                        int shm_data_id = shmget(key,  sizeof(circular_buf_t), IPC_CREAT | 0666);
+                        circular_buf_t *t = (circular_buf_t*) shmat(shm_data_id, NULL, 0);
+                        printf("herroo herrooo");
+                        printf("%s", t->buffer[0]);
                         // dr v
                         // show all the previous directories
                 }
 
-                if(strcmp(argv[1], "c")) {
+                if(strcmp(argv[1], "c") == 0) {
                         // dr c
                         // change to a new directory
+                }
+
+                if(strcmp(argv[1], "exit") == 0){
+
+                  key_t key = 1234567890;
+                  int shm_id = shmget(key,  sizeof(struct Data), IPC_CREAT | 0666);
+                  shmctl(shm_id, IPC_RMID, NULL);
+
+                  key_t key_for_data = 987654321;
+                  shm_id = shmget(key_for_data,  sizeof(struct Data), IPC_CREAT | 0666);
+                  shmctl(shm_id, IPC_RMID, NULL);
                 }
 
         }
