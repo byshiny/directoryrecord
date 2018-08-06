@@ -17,16 +17,18 @@
 //#else
 
 #define MAX_CHAR_SIZE (1)
-#define CHAR_PER_LINE (128)
+#define CHAR_PER_LINE (100)
 #define LINES (100)
 //#endif
 
 //code from: https://embeddedartistry.com/blog/2017/4/6/circular-buffers-in-cc
 typedef struct {
         char buffer[LINES][CHAR_PER_LINE];
+        size_t filled;
         size_t head;
         size_t tail;
         size_t size; //of the buffer
+
 } circular_buf_t;
 /*got the template, will try my own implementation and modify as necessary
    https://embeddedartistry.com/blog/2017/4/6/circular-buffers-in-cc
@@ -41,6 +43,7 @@ struct Data {
  };
 circular_buf_t* global_cb;
 //DONE
+//reset the circular buffer so that all memory is erased by setting the head and tail to zero
 int circular_buf_reset(circular_buf_t * cbuf){
         //notice that only the pointers are being reset, because the size
         //will remain constant - "deleting" something is the same as not "knowing"
@@ -48,12 +51,14 @@ int circular_buf_reset(circular_buf_t * cbuf){
         if(cbuf) {
                 cbuf->head = 0;
                 cbuf->tail = 0;
+                //cbuf->fill = 0;
                 ret_val = 0;
         }
         return ret_val;
 }
 
 //DONE
+//put in a data value into the circular buffer
 int circular_buf_put(circular_buf_t * cbuf, char* data){
         //probably need to move all of the da data down...
         int r = -1;
@@ -62,7 +67,7 @@ int circular_buf_put(circular_buf_t * cbuf, char* data){
         {
                 strcpy(cbuf->buffer[cbuf->head], data);
                 cbuf->head = (cbuf->head + 1) % cbuf->size;
-
+                //cbuf->fill = cbuf->fill + 1;
                 if(cbuf->head == cbuf->tail)
                 {
                         cbuf->tail = (cbuf->tail + 1) % cbuf->size;
@@ -77,10 +82,10 @@ int circular_buf_put(circular_buf_t * cbuf, char* data){
 //DONE
 int circular_buf_empty(circular_buf_t cbuf){
         return (cbuf.head == cbuf.tail);
-
 }
 
 //TODO:DONE
+//return the index of the data point that has that value
 int circular_buf_get(circular_buf_t * cbuf, char * data){
         int r = -1;
         if(cbuf && data && !circular_buf_empty(*cbuf))
@@ -126,19 +131,16 @@ void timer_handler (int signum)
                     circular_buf_put(global_cb, path);
                 }
                 strcpy(latest_directory, path);
-                printf("head!");
-                printf("%d",counter);
-                if(counter == 5){
-                  break;
-                }
-                counter++;
                 //printf("%s", latest_directory);
                 //circular_buf_put();
                 //printf("%s", path);
         }
-        printf("yoodle lay hoo%s", latest_directory);
+        printf("yoodle lay hoo: %s", latest_directory);
+
         /* close */
         pclose(fp);
+
+        printf("place %s", global_cb->buffer[global_cb->head]);
 
 }
 
@@ -151,7 +153,7 @@ int create_shared_memory_for_meta() {
         //#define LINES (100)
 
         key_t key;
-        key = 1234567890;
+        key = 123456780;
         //int size = MAX_CHAR_SIZE * CHAR_PER_LINE * LINES;
         //replaced with struct data, but can put size as well. Need to think hard about how I'm going to allocate this memory,
         //and how I am going to free this later.
@@ -170,6 +172,8 @@ int create_shared_memory_for_meta() {
 int create_shared_memory_for_data() {
   //sizeof(LINES* CHAR_PER_LINE * MAX_CHAR_SIZE)
         key_t shared_buffer_key = 987654321;
+        //ok this is a complete hack- this should not be 6.
+        printf("herro!%lu!", sizeof(circular_buf_t));
         int shm_buffer_id = shmget(shared_buffer_key, sizeof(circular_buf_t) , IPC_CREAT | 0666);
         if ( shm_buffer_id < 0) {
                 printf("shmat() for circular buffer failed\n"); exit(1);
@@ -268,6 +272,7 @@ int main(int argc, char *argv[])   //  command line arguments
                         circular_buf_t *t = (circular_buf_t*) shmat(shm_data_id, NULL, 0);
                         printf("herroo herrooo");
                         printf("%s", t->buffer[0]);
+
                         // dr v
                         // show all the previous directories
                 }

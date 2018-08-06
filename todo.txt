@@ -21,6 +21,12 @@ starting at one and going backwards to let's say a limit of 1000 lines.
 dr 5 - would go back 5 directories.
 dr purge - remove the file stores the directory
 
+Watch outs:
+
+apparently there is a size limit on how much you can allocate to the shared memory. Make sure you check the amounts if
+this program starts causing crashes.
+
+
 hmm.. Suppose:
 
 6 - A
