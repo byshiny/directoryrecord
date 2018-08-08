@@ -67,6 +67,7 @@ int circular_buf_put(circular_buf_t * cbuf, char* data){
         {
                 strcpy(cbuf->buffer[cbuf->head], data);
                 cbuf->head = (cbuf->head + 1) % cbuf->size;
+                //printf("cbuf head change %zu\n", cbuf->head);
                 cbuf->fill = cbuf->fill + 1;
                 if(cbuf->head == cbuf->tail)
                 {
@@ -115,7 +116,9 @@ void timer_handler (int signum)
 
         /* Open the command for reading. */
         //fp = popen("/bin/ls /etc/", "r");
-        fp = popen("pwd", "r");
+        // ps $PPID
+        //fp = popen("pwd -l", "r");
+        fp = popen("ps $PPID", "r");
         if (fp == NULL) {
                 printf("Failed to run command\n" );
                 exit(1);
@@ -127,31 +130,27 @@ void timer_handler (int signum)
         while (fgets(path, sizeof(path)-1, fp) != NULL) {
                 //comment this out temporarily for
                 latest_directory = global_cb->buffer[global_cb->head];
+
                 if(strcmp(latest_directory, path) != 0){
                     circular_buf_put(global_cb, path);
                 }
-                strcpy(latest_directory, path);
-                //printf("%s", latest_directory);
+                printf("buf directory %s", latest_directory);
+                printf("path %s", path);
                 //circular_buf_put();
                 //printf("%s", path);
         }
 
-        
+
         /* close */
         pclose(fp);
 
-        printf("place %s", global_cb->buffer[global_cb->head]);
+        //printf("directory %s", global_cb->buffer[global_cb->head]);
 
 }
 
 
 //create a memory region for meta information
 int create_shared_memory_for_meta() {
-        //this is a usecase for quickclip
-        //#define MAX_CHAR_SIZE (1)
-        //#define CHAR_PER_LINE (128)
-        //#define LINES (100)
-
         key_t key;
         key = 123456780;
         //int size = MAX_CHAR_SIZE * CHAR_PER_LINE * LINES;
@@ -200,10 +199,10 @@ void start_pwd_grabber(){
         sigaction (SIGVTALRM, &sa, NULL);
 
         /* Configure the timer to expire after 250 msec... */
-        timer.it_value.tv_sec = 1;
+        timer.it_value.tv_sec = 10;
         timer.it_value.tv_usec = 0;
         /* ... and every 250 msec after that. */
-        timer.it_interval.tv_sec = 1;
+        timer.it_interval.tv_sec = 10;
         timer.it_interval.tv_usec = 0;
         /* Start a virtual timer. It counts down whenever this process is
            executing. */
@@ -232,9 +231,9 @@ void printDirectoryHistory(){
 
 int print_all_directories(circular_buf_t *t){
   int fill = t->fill;
-  printf("%d:", fill);
-  for(int x = 0; x < fill; x++){
-    printf("%s\n", t->buffer[x]);
+  printf("\n%d:", fill);
+  for(int x = 0; x < 5; x++){
+    printf("x: %d %s\n", x, t->buffer[x]);
   }
   return 0;
 }
