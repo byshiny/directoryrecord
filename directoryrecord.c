@@ -117,8 +117,9 @@ void timer_handler (int signum)
         /* Open the command for reading. */
         //fp = popen("/bin/ls /etc/", "r");
         // ps $PPID
-        //fp = popen("pwd -l", "r");
-        fp = popen("ps $PPID", "r");
+        //fp = popen("pwd -l", "r");z
+        //fp = popen("ps $PPID", "r");
+        fp = popen("ps -o ppid= -p $PPID", "r");
         if (fp == NULL) {
                 printf("Failed to run command\n" );
                 exit(1);
