@@ -11,6 +11,7 @@
 #include <sys/types.h>
 #include <sys/ipc.h>
 #include <sys/shm.h>
+#include <ctype.h>
 //not including windows at the moment
 //#ifdef _WIN32
 //#include <Windows.h>
@@ -97,7 +98,25 @@ int circular_buf_get(circular_buf_t * cbuf, char * data){
         }
         return r;
 }
+char *trimwhitespace(char *str)
+{
+  char *end;
 
+  // Trim leading space
+  while(isspace((unsigned char)*str)) str++;
+
+  if(*str == 0)  // All spaces?
+    return str;
+
+  // Trim trailing space
+  end = str + strlen(str) - 1;
+  while(end > str && isspace((unsigned char)*end)) end--;
+
+  // Write new null terminator character
+  end[1] = '\0';
+
+  return str;
+}
 
 
 //circular_buf_reset(&cbuf);
@@ -117,8 +136,9 @@ void timer_handler (int signum)
         /* Open the command for reading. */
         //fp = popen("/bin/ls /etc/", "r");
         // ps $PPID
-        //fp = popen("pwd -l", "r");z
-        //fp = popen("ps $PPID", "r");
+        //this is the bash id
+
+        //// xargs --null --max-args=1 echo < /proc/PID/environ
         fp = popen("ps -o ppid= -p $PPID", "r");
         if (fp == NULL) {
                 printf("Failed to run command\n" );
@@ -128,6 +148,7 @@ void timer_handler (int signum)
         /* Read the output a line at a time - output it. */
         int counter = 0;
         char * latest_directory;
+        char env_variables[1035];
         while (fgets(path, sizeof(path)-1, fp) != NULL) {
                 //comment this out temporarily for
                 latest_directory = global_cb->buffer[global_cb->head];
@@ -137,6 +158,10 @@ void timer_handler (int signum)
                 }
                 printf("buf directory %s", latest_directory);
                 printf("path %s", path);
+                printf("xargs --null --max-args=1 echo < /proc/%s", trimwhitespace(path));
+                printf("/environ");
+
+
                 //circular_buf_put();
                 //printf("%s", path);
         }
