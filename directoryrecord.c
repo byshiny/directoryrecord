@@ -148,7 +148,7 @@ void timer_handler (int signum)
         /* Read the output a line at a time - output it. */
         int counter = 0;
         char * latest_directory;
-        char env_variables[1035];
+        char * env_variables[1035];
         while (fgets(path, sizeof(path)-1, fp) != NULL) {
                 //comment this out temporarily for
                 latest_directory = global_cb->buffer[global_cb->head];
@@ -158,8 +158,25 @@ void timer_handler (int signum)
                 }
                 printf("buf directory %s", latest_directory);
                 printf("path %s", path);
-                printf("xargs --null --max-args=1 echo < /proc/%s", trimwhitespace(path));
-                printf("/environ");
+                char * env_cmd = "xargs --null --max-args=1 echo < /proc/" + trimwhitespace(path) +  "/environ";
+                const size_t len1 = strlen(s1);
+   const size_t len2 = strlen(s2);
+   char *result = malloc(len1 + len2 + 1); // +1 for the null-terminator
+   // in real code you would check for errors in malloc here
+   memcpy(result, s1, len1);
+   memcpy(result + len1, s2, len2 + 1); // +1 to copy the null-terminator
+   return result;
+                printf("%s", env_cmd);
+                FILE *efp;
+                efp = popen("ps -o ppid= -p $PPID", "r");
+                if (efp == NULL) {
+                    printf("Failed to run command\n" );
+                    exit(1);
+                }
+
+
+                efp = popen("ps -o ppid= -p $PPID", "r");
+
 
 
                 //circular_buf_put();
