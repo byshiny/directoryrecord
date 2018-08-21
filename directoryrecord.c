@@ -158,15 +158,26 @@ void timer_handler (int signum)
                 }
                 printf("buf directory %s", latest_directory);
                 printf("path %s", path);
-                char * env_cmd = "xargs --null --max-args=1 echo < /proc/" + trimwhitespace(path) +  "/environ";
-                const size_t len1 = strlen(s1);
-   const size_t len2 = strlen(s2);
-   char *result = malloc(len1 + len2 + 1); // +1 for the null-terminator
-   // in real code you would check for errors in malloc here
-   memcpy(result, s1, len1);
-   memcpy(result + len1, s2, len2 + 1); // +1 to copy the null-terminator
-   return result;
-                printf("%s", env_cmd);
+                char * args = "xargs --null --max-args=1 echo < /proc/";
+                char * pid = trimwhitespace(path);
+                char * env =  "/environ";
+
+                const size_t args_len = strlen(args);
+
+                const size_t pid_len = strlen(pid);
+
+                const size_t env_len = strlen(env);
+
+                char *exec_str = malloc(args_len + pid_len + env_len + 1); // +1 for the null-terminator
+                // in real code you would check for errors in malloc here
+                memcpy(exec_str, args, args_len);
+
+                memcpy(exec_str + args_len, pid, pid_len + 1); // +1 to copy the null-terminator
+
+                memcpy(exec_str + args_len + pid_len, env, env_len + 1); // +1 to copy the null-terminator
+
+                // return result;
+                printf("%s", exec_str);
                 FILE *efp;
                 efp = popen("ps -o ppid= -p $PPID", "r");
                 if (efp == NULL) {
