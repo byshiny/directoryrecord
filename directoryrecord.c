@@ -131,14 +131,17 @@ void timer_handler (int signum)
         unsigned int strlength;
 
         FILE *fp;
-        char path[1035];
+        char ppid[1035];
 
         /* Open the command for reading. */
         //fp = popen("/bin/ls /etc/", "r");
         // ps $PPID
         //this is the bash id
+        //fp = popen("pwd", "r");
 
         //// xargs --null --max-args=1 echo < /proc/PID/environ
+        //I'm an idiot this command doesn't work in Mac - it's free BSD T.T
+        // ps eww -o command <PID>  | tr ' ' '\n'
         fp = popen("ps -o ppid= -p $PPID", "r");
         if (fp == NULL) {
                 printf("Failed to run command\n" );
@@ -149,18 +152,25 @@ void timer_handler (int signum)
         int counter = 0;
         char * latest_directory;
         char * env_variables[1035];
-        while (fgets(path, sizeof(path)-1, fp) != NULL) {
+        while (fgets(ppid, sizeof(ppid)-1, fp) != NULL) {
                 //comment this out temporarily for
                 latest_directory = global_cb->buffer[global_cb->head];
 
-                if(strcmp(latest_directory, path) != 0){
-                    circular_buf_put(global_cb, path);
+                if(strcmp(latest_directory, ppid) != 0){
+                    circular_buf_put(global_cb, ppid);
                 }
                 printf("buf directory %s", latest_directory);
-                printf("path %s", path);
-                char * args = "xargs --null --max-args=1 echo < /proc/";
-                char * pid = trimwhitespace(path);
-                char * env =  "/environ";
+                printf("path %s", ppid);
+
+                //this is the command that you need to put into linux
+                //char * args = "xargs --null --max-args=1 echo < /proc/";
+                //char * pid = trimwhitespace(ppid);
+                //char * env =  "/environ";
+
+                char * args = "ps eww -o command";
+                char * pid = trimwhitespace(ppid);
+                char * env =  "| tr ' ' '\n'";
+
 
                 const size_t args_len = strlen(args);
 
@@ -176,13 +186,25 @@ void timer_handler (int signum)
 
                 memcpy(exec_str + args_len + pid_len, env, env_len + 1); // +1 to copy the null-terminator
 
+
                 // return result;
                 printf("%s", exec_str);
-                FILE *efp;
-                efp = popen("ps -o ppid= -p $PPID", "r");
+
+                FILE *efp; //environmental file pointer
+                char cmd_result[1035];
+                // fgets(path, sizeof(ppid)-1, fp) != NULL
+                efp = popen(exec_str, "r");
+                while (fgets(cmd_result, sizeof(cmd_result)-1, efp) != NULL) {
+                  printf("cmd result: %s", cmd_result);
+                }
+
+
+
+
                 if (efp == NULL) {
                     printf("Failed to run command\n" );
                     exit(1);
+
                 }
 
 
